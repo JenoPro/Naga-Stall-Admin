@@ -69,34 +69,6 @@ export default function CountdownSection({
               isPaused={timerPaused}
               key={`timer-${item.stallId}-${item.end_time}-${timerRunning}-${timerPaused}`}
             />
-
-            <View style={compactStyles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  compactStyles.compactTimerButton,
-                  timerPaused
-                    ? compactStyles.resumeButton
-                    : compactStyles.pauseButton,
-                ]}
-                onPress={onStopTimer}
-              >
-                <Text style={compactStyles.compactTimerButtonText}>
-                  {timerPaused ? "Resume" : "Pause"}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  compactStyles.compactTimerButton,
-                  compactStyles.resetButton,
-                ]}
-                onPress={onResetTimer}
-              >
-                <Text style={compactStyles.compactTimerButtonText}>
-                  Reset
-                </Text>
-              </TouchableOpacity>
-            </View>
           </>
         )}
       </View>
