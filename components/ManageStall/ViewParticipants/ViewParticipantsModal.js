@@ -5,13 +5,14 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ScrollView,
   Alert,
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import supabase from "../../../config/supabaseClient";
 import styles from "../../../Styles/ViewParticipantsModal";
+import ApplicantItem from "./viewModal/ApplicantItem";
+import ApplicantDetailsModal from "./viewModal/ApplicantDetailsModal";
 
 export default function ViewParticipantsModal({
   visible,
@@ -69,7 +70,6 @@ export default function ViewParticipantsModal({
     try {
       setLoading(true);
       
-      // Fetch applications for the specific stall with spouse information
       const { data: applications, error } = await supabase
         .from("Application")
         .select(`
@@ -94,9 +94,7 @@ export default function ViewParticipantsModal({
   };
 
   const handleViewMore = async (applicant) => {
-    // Mark this participant as viewed
     await markParticipantAsViewed(applicant.ApplicationId);
-    
     setSelectedApplicant(applicant);
     setShowDetails(true);
   };
@@ -104,11 +102,6 @@ export default function ViewParticipantsModal({
   const handleCloseDetails = () => {
     setShowDetails(false);
     setSelectedApplicant(null);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not provided";
-    return new Date(dateString).toLocaleDateString();
   };
 
   // Check if a participant is new (not previously viewed)
@@ -123,211 +116,13 @@ export default function ViewParticipantsModal({
     return createdAt > lastViewedTimestamp;
   };
 
-  const renderApplicantItem = ({ item }) => {
-    const isNew = isNewParticipant(item);
-    const isRecent = isRecentParticipant(item);
-    
-    return (
-      <View style={styles.applicantItem}>
-        <View style={styles.applicantHeader}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.applicantName}>
-              {item.Applicants_Name || "No Name Provided"}
-            </Text>
-            {(isNew || isRecent) && (
-              <View style={newBadgeStyles.newBadge}>
-                <Text style={newBadgeStyles.newBadgeText}>NEW!</Text>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity
-            style={styles.viewMoreButton}
-            onPress={() => handleViewMore(item)}
-          >
-            <Text style={styles.viewMoreButtonText}>View More</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.applicantStatus}>
-          Status: {item.status || "Pending"}
-        </Text>
-        <Text style={styles.applicationDate}>
-          Applied: {formatDate(item.created_at)}
-        </Text>
-      </View>
-    );
-  };
-
-  const renderDetailsModal = () => (
-    <Modal
-      visible={showDetails}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={handleCloseDetails}
-    >
-      <View style={styles.detailsModalOverlay}>
-        <View style={styles.detailsModalContent}>
-          <View style={styles.detailsHeader}>
-            <View style={styles.detailsTitleContainer}>
-              <Text style={styles.detailsTitle}>Applicant Details</Text>
-              {/* Remove the NEW badge from details modal since it's already been viewed */}
-            </View>
-            <TouchableOpacity
-              style={styles.closeDetailsButton}
-              onPress={handleCloseDetails}
-            >
-              <Text style={styles.closeDetailsButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.detailsScrollView}>
-            {selectedApplicant && (
-              <>
-                {/* Personal Information */}
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle}>Personal Information</Text>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Full Name:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_Name || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Age:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_Age || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Civil Status:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_CivilStatus || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Contact Number:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_ContactNo || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Mailing Address:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_MailingAddress || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Highest Education:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_HighestEducationalAttainment || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Capitalization:</Text>
-                    <Text style={styles.detailValue}>
-                      ₱{selectedApplicant.Applicants_Capitalization?.toLocaleString() || "0"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Source of Capital:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_SourceOfCapital || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Previous Business:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_PreviousBusinessExperience || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Relatives in Market:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_RelativeStallOwner || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Proposed Trading:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_ProposeType || "Not provided"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>House Lot Address:</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedApplicant.Applicants_HouseLocation || "Not provided"}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Spouse Information */}
-                {selectedApplicant.SpouseInformation && selectedApplicant.SpouseInformation.length > 0 && (
-                  <View style={styles.sectionContainer}>
-                    <Text style={styles.sectionTitle}>Spouse Information</Text>
-                    {selectedApplicant.SpouseInformation.map((spouse, index) => (
-                      <View key={index} style={styles.spouseContainer}>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Full Name:</Text>
-                          <Text style={styles.detailValue}>
-                            {spouse.spouse_FullName || "Not provided"}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Age:</Text>
-                          <Text style={styles.detailValue}>
-                            {spouse.spouse_Age || "Not provided"}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Educational Attainment:</Text>
-                          <Text style={styles.detailValue}>
-                            {spouse.spouse_EducationalAttainment || "Not provided"}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Occupation:</Text>
-                          <Text style={styles.detailValue}>
-                            {spouse.spouse_Occupation || "Not provided"}
-                          </Text>
-                        </View>
-                        <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Names of Children:</Text>
-                          <Text style={styles.detailValue}>
-                            {spouse.namesOfChildren || "Not provided"}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {/* Application Status */}
-                <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle}>Application Status</Text>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Status:</Text>
-                    <Text style={[
-                      styles.detailValue,
-                      styles.statusText,
-                      selectedApplicant.status === 'approved' && styles.approvedStatus,
-                      selectedApplicant.status === 'rejected' && styles.rejectedStatus,
-                      selectedApplicant.status === 'pending' && styles.pendingStatus,
-                    ]}>
-                      {selectedApplicant.status || "Pending"}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Application Date:</Text>
-                    <Text style={styles.detailValue}>
-                      {formatDate(selectedApplicant.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+  const renderApplicantItem = ({ item }) => (
+    <ApplicantItem
+      item={item}
+      isNew={isNewParticipant(item)}
+      isRecent={isRecentParticipant(item)}
+      onViewMore={() => handleViewMore(item)}
+    />
   );
 
   return (
@@ -379,36 +174,11 @@ export default function ViewParticipantsModal({
         </View>
       </Modal>
 
-      {renderDetailsModal()}
+      <ApplicantDetailsModal
+        visible={showDetails}
+        applicant={selectedApplicant}
+        onClose={handleCloseDetails}
+      />
     </>
   );
 }
-
-// New badge styles
-const newBadgeStyles = {
-  newBadge: {
-    backgroundColor: "#FF4444",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
-    alignSelf: 'flex-start',
-  },
-  newBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  newBadgeDetails: {
-    backgroundColor: "#FF4444",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginLeft: 10,
-  },
-  newBadgeTextDetails: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-};
