@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  Alert,
-  Modal,
-} from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import AdminNavbar from "../components/AdminNavbar"; // Adjust path if needed
+import { View, Text, Alert, FlatList } from "react-native";
+import AdminNavbar from "../components/AdminNavbar";
 import supabase from "../config/supabaseClient";
 import StallTableRow from "../components/ManageStall/StallTableRow";
 import ImagePreviewModal from "../components/ManageStall/ImagePreviewModal";
 import AddStallModal from "../components/ManageStall/AddStallModal";
+import StallHeader from "./StallModal/StallHeader";
+import StallSearchFilter from "./StallModal/StallSearchFilter";
+import StallTableHeader from "./StallModal/StallTableHeader";
 import styles from "../Styles/ManageStall";
 
 export default function StallScreen() {
@@ -27,19 +19,16 @@ export default function StallScreen() {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [addStallModalVisible, setAddStallModalVisible] = useState(false);
-
-  // New state for participants data
   const [participantsData, setParticipantsData] = useState({});
 
   // Function to fetch participants for a specific stall
   const fetchParticipants = async (stallId) => {
     try {
-      // Fixed: Using stallNo instead of stallId to match database schema
       const { data, error } = await supabase
-        .from("Application") // Adjust table name as needed
+        .from("Application")
         .select("*")
-        .eq("stallNo", stallId) // FIXED: Changed from stallId to stallNo
-        .eq("status", "pending"); // Or whatever status indicates active applications
+        .eq("stallNo", stallId)
+        .eq("status", "pending");
 
       if (error) {
         console.log("❌ Error fetching participants:", error);
@@ -58,11 +47,9 @@ export default function StallScreen() {
     try {
       const participantsMap = {};
 
-      // Fetch participants for each stall
       for (const stall of stalls) {
-        // Fixed: Using stallId instead of stallId
         const participants = await fetchParticipants(stall.stallId);
-        participantsMap[stall.stallId] = participants; // Changed key to stallId
+        participantsMap[stall.stallId] = participants;
       }
 
       setParticipantsData(participantsMap);
@@ -77,10 +64,8 @@ export default function StallScreen() {
       const aParticipants = participantsData[a.stallId] || [];
       const bParticipants = participantsData[b.stallId] || [];
 
-      // Sort by participant count descending (most participants first)
       const participantDiff = bParticipants.length - aParticipants.length;
 
-      // If participant counts are equal, sort by stallId ascending as secondary sort
       if (participantDiff === 0) {
         return (a.stallId || 0) - (b.stallId || 0);
       }
@@ -93,12 +78,10 @@ export default function StallScreen() {
   const applyFiltersAndSearch = (data, status, query) => {
     let result = data;
 
-    // Apply status filter
     if (status !== "all") {
       result = data.filter((item) => item.status === status);
     }
 
-    // Apply search query
     if (query && query.trim() !== "") {
       const lowercaseQuery = query.toLowerCase();
       result = result.filter(
@@ -111,7 +94,6 @@ export default function StallScreen() {
       );
     }
 
-    // Sort by participant count (only if we have participant data)
     if (Object.keys(participantsData).length > 0) {
       result = sortStallsByParticipants(result);
     }
@@ -131,7 +113,6 @@ export default function StallScreen() {
         console.log("✅ Fetched stalls:", data);
         const sortedData = data || [];
         setStalls(sortedData);
-        // Initial filter/search application without sorting (since participants data isn't loaded yet)
         let result = sortedData;
         if (statusFilter !== "all") {
           result = sortedData.filter((item) => item.status === statusFilter);
@@ -160,51 +141,44 @@ export default function StallScreen() {
   // Function to refresh both stalls and participants data
   const refreshData = async () => {
     await fetchStalls();
-    // fetchAllParticipantsData will be called in the useEffect when stalls are updated
   };
 
   useEffect(() => {
     fetchStalls();
   }, []);
 
-  // Fetch participants data when stalls are loaded and set up auto-refresh for participants only
   useEffect(() => {
     if (stalls.length > 0) {
       fetchAllParticipantsData();
 
-      // Set up periodic refresh for participants data only
       const interval = setInterval(() => {
         fetchAllParticipantsData();
-      }, 1000); // Refresh every 1 second
+      }, 1000);
 
       return () => clearInterval(interval);
     }
   }, [stalls]);
 
-  // Re-apply filters and sorting when participants data changes
   useEffect(() => {
     if (Object.keys(participantsData).length > 0 && stalls.length > 0) {
       applyFiltersAndSearch(stalls, statusFilter, searchQuery);
     }
   }, [participantsData]);
 
-  // Auto-search effect - triggers when searchQuery changes
   useEffect(() => {
     if (stalls.length > 0) {
       applyFiltersAndSearch(stalls, statusFilter, searchQuery);
     }
-  }, [searchQuery, statusFilter]); // Added statusFilter dependency to ensure consistency
+  }, [searchQuery, statusFilter]);
 
-  // Handle search input change (now triggers automatic search)
+  // Handle search input change
   const handleSearchChange = (text) => {
     setSearchQuery(text);
-    // The useEffect above will automatically trigger the search
   };
 
   // Handle filter change
   const handleFilterChange = (value) => {
     setStatusFilter(value);
-    // The useEffect will handle the filtering automatically
   };
 
   // Get image URL from Supabase storage
@@ -223,7 +197,7 @@ export default function StallScreen() {
     setImageModalVisible(true);
   };
 
-  // Handle edit stall - Updated to refresh data after edit
+  // Handle edit stall
   const handleEditStall = async (stallId) => {
     Alert.alert("Edit Stall", `Edit stall with ID: ${stallId}`, [
       {
@@ -233,8 +207,6 @@ export default function StallScreen() {
       {
         text: "Edit",
         onPress: async () => {
-          // Add your edit logic here
-          // After successful edit, refresh the data
           await refreshData();
           Alert.alert("Success", "Stall has been updated");
         },
@@ -242,7 +214,7 @@ export default function StallScreen() {
     ]);
   };
 
-  // Handle remove stall - Updated to refresh data after removal
+  // Handle remove stall
   const handleRemoveStall = (stallId) => {
     Alert.alert("Remove Stall", "Are you sure you want to remove this stall?", [
       {
@@ -274,7 +246,6 @@ export default function StallScreen() {
                 }
               }
               
-              // Refresh data after successful deletion
               await refreshData();
               Alert.alert("Success", "Stall has been removed");
             }
@@ -305,10 +276,9 @@ export default function StallScreen() {
     setAddStallModalVisible(true);
   };
 
-  // Handle successful stall addition - Updated to refresh data
+  // Handle successful stall addition
   const handleStallAdded = async (newStallData) => {
     setAddStallModalVisible(false);
-    // Refresh data after adding new stall
     await refreshData();
     Alert.alert("Success", "Stall has been added successfully");
   };
@@ -317,57 +287,17 @@ export default function StallScreen() {
     <View style={styles.container}>
       <AdminNavbar activeId="stalls" />
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Manage Stall</Text>
-          <TouchableOpacity style={styles.addButton} onPress={handleAddStall}>
-            <Text style={styles.addButtonText}>Add Available Stall</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.searchFilterContainer}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Stalls..."
-              value={searchQuery}
-              onChangeText={handleSearchChange} // Updated to use the new handler
-            />
-            {/* Removed the search button since search is now automatic */}
-          </View>
-          <View style={styles.filterContainer}>
-            <Picker
-              selectedValue={statusFilter}
-              style={styles.filterPicker}
-              onValueChange={handleFilterChange}
-            >
-              <Picker.Item label="Filter" value="all" />
-              <Picker.Item label="Active" value="available" />
-              <Picker.Item label="Pending" value="pending" />
-              <Picker.Item label="Raffled" value="raffled" />
-            </Picker>
-          </View>
-        </View>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderCell, styles.imageCell]}>Image</Text>
-          <Text style={[styles.tableHeaderCell, styles.stallIdCell]}>
-            Stall No.
-          </Text>
-          <Text style={[styles.tableHeaderCell, styles.locationCell]}>
-            Location
-          </Text>
-          <Text style={[styles.tableHeaderCell, styles.sizeCell]}>Size</Text>
-          <Text style={[styles.tableHeaderCell, styles.amountCell]}>
-            Amount
-          </Text>
-          <Text style={[styles.tableHeaderCell, styles.dateCell]}>
-            Date of Raffle
-          </Text>
-          <Text style={[styles.tableHeaderCell, styles.applicantsCell]}>
-            Applicants
-          </Text>
-          <Text style={[styles.tableHeaderCell, styles.actionsCell]}>
-            Actions
-          </Text>
-        </View>
+        <StallHeader onAddStall={handleAddStall} />
+        
+        <StallSearchFilter
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+        />
+
+        <StallTableHeader />
+
         {loading ? (
           <View style={styles.loadingContainer}>
             <Text>Loading data...</Text>
@@ -384,7 +314,6 @@ export default function StallScreen() {
                 onRemoveStall={handleRemoveStall}
                 onViewParticipants={handleViewParticipants}
                 onGoLive={handleGoLive}
-                // New props for participant notifications
                 fetchParticipants={fetchParticipants}
                 participantsData={participantsData}
               />
@@ -398,11 +327,13 @@ export default function StallScreen() {
             }
           />
         )}
+
         <ImagePreviewModal
           visible={imageModalVisible}
           selectedImage={selectedImage}
           onClose={() => setImageModalVisible(false)}
         />
+
         <AddStallModal
           visible={addStallModalVisible}
           onClose={() => setAddStallModalVisible(false)}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Alert, ActivityIndicator, Modal, ScrollView, Linking, Image, Dimensions } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
 import AdminNavbar from '../components/AdminNavbar';
-import styles from '../Styles/ManageStall'; // Import the comprehensive styles
-
+import DocumentTableRow from './DocumentsModal/DocumentTableRow';
+import DocumentModal from './DocumentsModal/DocumentModal';
+import SearchFilterBar from './DocumentsModal/SearchFilterBar';
+import styles from '../Styles/ManageStall';
 import supabase from '../config/supabaseClient';
 
 const ManageDocumentsScreen = () => {
@@ -19,11 +20,6 @@ const ManageDocumentsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRegistrant, setSelectedRegistrant] = useState(null);
   const [selectedDocuments, setSelectedDocuments] = useState(null);
-  
-  // Simplified modal states
-  const [selectedDocumentType, setSelectedDocumentType] = useState(null);
-  const [currentDocumentUrl, setCurrentDocumentUrl] = useState('');
-  const [currentDocumentTitle, setCurrentDocumentTitle] = useState('');
 
   // Required documents list
   const requiredDocuments = [
@@ -54,14 +50,13 @@ const ManageDocumentsScreen = () => {
     const userDoc = documentsData.find(doc => doc.registrantFullName === registrantName);
     
     if (!userDoc) {
-      return 'Not Complete'; // No documents found
+      return 'Not Complete';
     }
 
-    // Check if all required documents are present
     const missingDocs = requiredDocuments.filter(docType => !userDoc[docType]);
     
     if (missingDocs.length > 0) {
-      return 'Not Complete'; // Missing some documents
+      return 'Not Complete';
     }
 
     // Check for recent uploads (within last 7 days) - indicates resubmit
@@ -83,7 +78,7 @@ const ManageDocumentsScreen = () => {
       return 'Resubmit';
     }
 
-    return 'Complete'; // All documents present, no recent uploads
+    return 'Complete';
   };
 
   // Process and combine registrant and document data
@@ -94,7 +89,6 @@ const ManageDocumentsScreen = () => {
       return {
         ...registrant,
         status: status,
-        // Add a unique identifier for FlatList
         id: registrant.fullName
       };
     });
@@ -128,7 +122,6 @@ const ManageDocumentsScreen = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch registrants
       const { data: registrantData, error: registrantError } = await supabase
         .from('Registrant')
         .select('fullName, emailAddress, phoneNumber, address');
@@ -139,7 +132,6 @@ const ManageDocumentsScreen = () => {
         return;
       }
 
-      // Fetch documents
       const { data: documentData, error: documentError } = await supabase
         .from('documents')
         .select('*');
@@ -156,7 +148,6 @@ const ManageDocumentsScreen = () => {
       setRegistrants(registrantData || []);
       setDocuments(documentData || []);
       
-      // Process the combined data
       processRegistrantData(registrantData || [], documentData || []);
 
     } catch (error) {
@@ -167,7 +158,7 @@ const ManageDocumentsScreen = () => {
     }
   };
 
-  // Handle view document - Updated to show modal
+  // Handle view document
   const handleViewDocument = (fullName) => {
     const userDoc = documents.find(doc => doc.registrantFullName === fullName);
     const registrant = registrants.find(reg => reg.fullName === fullName);
@@ -194,82 +185,6 @@ const ManageDocumentsScreen = () => {
     }
   };
 
-  // Get status color and styling
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'complete':
-        return '#4CAF50';
-      case 'resubmit':
-        return '#FF9800';
-      case 'not complete':
-        return '#F44336';
-      default:
-        return '#666';
-    }
-  };
-
-  const getStatusStyle = (status) => {
-    const baseStyle = {
-      fontSize: 12,
-      fontWeight: 'bold',
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      borderRadius: 12,
-      textAlign: 'center',
-      overflow: 'hidden',
-    };
-
-    switch (status.toLowerCase()) {
-      case 'complete':
-        return {
-          ...baseStyle,
-          backgroundColor: '#E8F5E8',
-          color: '#4CAF50',
-        };
-      case 'resubmit':
-        return {
-          ...baseStyle,
-          backgroundColor: '#FFF3E0',
-          color: '#FF9800',
-        };
-      case 'not complete':
-        return {
-          ...baseStyle,
-          backgroundColor: '#FFEBEE',
-          color: '#F44336',
-        };
-      default:
-        return {
-          ...baseStyle,
-          backgroundColor: '#F5F5F5',
-          color: '#666',
-        };
-    }
-  };
-
-  // Function to show individual document
-  const showDocument = (docType) => {
-    const documentUrl = selectedDocuments?.[docType];
-    const documentTitle = documentDisplayNames[docType];
-    const uploadDate = selectedDocuments?.[`${docType}_uploaded_at`];
-    
-    if (!documentUrl) {
-      Alert.alert('Document Not Available', `${documentTitle} has not been uploaded yet.`);
-      return;
-    }
-
-    setCurrentDocumentUrl(documentUrl);
-    setCurrentDocumentTitle(documentTitle);
-    setSelectedDocumentType({ docType, uploadDate });
-  };
-
-  // Back to document list
-  const goBackToList = () => {
-    setSelectedDocumentType(null);
-    setCurrentDocumentUrl('');
-    setCurrentDocumentTitle('');
-  };
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -289,152 +204,6 @@ const ManageDocumentsScreen = () => {
     </View>
   );
 
-  const renderTableRow = ({ item, index }) => (
-    <View style={[styles.tableRow, { backgroundColor: index % 2 === 0 ? '#fff' : '#f9f9f9' }]}>
-      <View style={[styles.tableCell, { width: '20%' }]}>
-        <Text style={{ fontSize: 14, color: '#333', fontWeight: '500' }}>{item.fullName}</Text>
-      </View>
-      <View style={[styles.tableCell, { width: '20%' }]}>
-        <Text style={{ fontSize: 14, color: '#333' }} numberOfLines={2}>{item.emailAddress}</Text>
-      </View>
-      <View style={[styles.tableCell, { width: '15%' }]}>
-        <Text style={{ fontSize: 14, color: '#333' }}>{item.phoneNumber}</Text>
-      </View>
-      <View style={[styles.tableCell, { width: '25%' }]}>
-        <Text style={{ fontSize: 14, color: '#333' }} numberOfLines={2}>{item.address}</Text>
-      </View>
-      <View style={[styles.tableCell, { width: '10%', alignItems: 'center' }]}>
-        <View style={getStatusStyle(item.status)}>
-          <Text style={{ fontSize: 12, fontWeight: 'bold', color: getStatusColor(item.status) }}>
-            {item.status.toUpperCase()}
-          </Text>
-        </View>
-      </View>
-      <View style={[styles.tableCell, { width: '10%', alignItems: 'center' }]}>
-        <TouchableOpacity 
-          style={styles.viewButton}
-          onPress={() => handleViewDocument(item.fullName)}
-        >
-          <Text style={styles.viewButtonText}>View</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  // Simplified Document Modal Component
-  const DocumentModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={modalVisible}
-      onRequestClose={() => setModalVisible(false)}
-    >
-      <View style={simplifiedModalStyles.modalOverlay}>
-        <View style={simplifiedModalStyles.modalContainer}>
-          
-          {/* Header */}
-          <View style={simplifiedModalStyles.modalHeader}>
-            <View style={simplifiedModalStyles.headerLeft}>
-              {selectedDocumentType && (
-                <TouchableOpacity 
-                  style={simplifiedModalStyles.backButton}
-                  onPress={goBackToList}
-                >
-                  <Text style={simplifiedModalStyles.backButtonText}>←</Text>
-                </TouchableOpacity>
-              )}
-              <Text style={simplifiedModalStyles.modalTitle}>
-                {selectedDocumentType ? currentDocumentTitle : selectedRegistrant?.fullName}
-              </Text>
-            </View>
-            <TouchableOpacity 
-              style={simplifiedModalStyles.closeButton}
-              onPress={() => {
-                setModalVisible(false);
-                goBackToList();
-              }}
-            >
-              <Text style={simplifiedModalStyles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Content */}
-          <View style={simplifiedModalStyles.contentContainer}>
-            {!selectedDocumentType ? (
-              // Document List View
-              <ScrollView style={simplifiedModalStyles.documentsContainer}>
-                {/* Registrant Info */}
-                <View style={simplifiedModalStyles.registrantInfo}>
-                  <Text style={simplifiedModalStyles.infoText}>Email: {selectedRegistrant?.emailAddress}</Text>
-                  <Text style={simplifiedModalStyles.infoText}>Phone: {selectedRegistrant?.phoneNumber}</Text>
-                  <Text style={simplifiedModalStyles.infoText}>Address: {selectedRegistrant?.address}</Text>
-                </View>
-
-                {/* Documents Grid */}
-                <View style={simplifiedModalStyles.documentsGrid}>
-                  {requiredDocuments.map((docType, index) => {
-                    const isAvailable = selectedDocuments?.[docType];
-                    
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        style={[
-                          simplifiedModalStyles.documentCard,
-                          { backgroundColor: isAvailable ? '#f0f8ff' : '#f5f5f5' }
-                        ]}
-                        onPress={() => showDocument(docType)}
-                        disabled={!isAvailable}
-                      >
-                        <Text style={[
-                          simplifiedModalStyles.documentCardTitle,
-                          { color: isAvailable ? '#002366' : '#999' }
-                        ]}>
-                          {documentDisplayNames[docType]}
-                        </Text>
-                        <View style={[
-                          simplifiedModalStyles.statusIndicator,
-                          { backgroundColor: isAvailable ? '#4CAF50' : '#F44336' }
-                        ]}>
-                          <Text style={simplifiedModalStyles.statusIndicatorText}>
-                            {isAvailable ? '✓' : '✗'}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            ) : (
-              // Individual Document View
-              <View style={simplifiedModalStyles.documentViewContainer}>
-                <ScrollView style={simplifiedModalStyles.documentContent}>
-                  {/* Document Image/Content */}
-                  <View style={simplifiedModalStyles.documentImageContainer}>
-                    <Image
-                      source={{ uri: currentDocumentUrl }}
-                      style={simplifiedModalStyles.documentImage}
-                      resizeMode="contain"
-                      onError={() => {
-                        Alert.alert('Error', 'Failed to load document image');
-                      }}
-                    />
-                  </View>
-                  
-                  {/* Upload Date */}
-                  <View style={simplifiedModalStyles.uploadDateContainer}>
-                    <Text style={simplifiedModalStyles.uploadDateText}>
-                      Uploaded: {formatUploadDate(selectedDocumentType.uploadDate)}
-                    </Text>
-                  </View>
-                </ScrollView>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   return (
     <View style={styles.container}>
       <AdminNavbar activeId="documents" />
@@ -449,37 +218,23 @@ const ManageDocumentsScreen = () => {
         </View>
 
         {/* Search and Filter */}
-        <View style={styles.searchFilterContainer}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name, email, phone, or address..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton}>
-              <Text style={styles.searchButtonText}>Search</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.filterContainer}>
-            <View style={styles.filterPicker}>
-              <Picker
-                selectedValue={statusFilter}
-                onValueChange={(itemValue) => setStatusFilter(itemValue)}
-                style={{ height: 40, color: '#002366' }}
-              >
-                <Picker.Item label="All Status" value="all" />
-                <Picker.Item label="Complete" value="complete" />
-                <Picker.Item label="Resubmit" value="resubmit" />
-                <Picker.Item label="Not Complete" value="not complete" />
-              </Picker>
-            </View>
-          </View>
-        </View>
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+        />
 
         {/* Table Container */}
-        <View style={[styles.tableContent, { borderRadius: 8, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }]}>
+        <View style={[styles.tableContent, { 
+          borderRadius: 8, 
+          overflow: 'hidden', 
+          elevation: 2, 
+          shadowColor: '#000', 
+          shadowOffset: { width: 0, height: 2 }, 
+          shadowOpacity: 0.1, 
+          shadowRadius: 4 
+        }]}>
           {renderTableHeader()}
           
           {loading ? (
@@ -494,7 +249,13 @@ const ManageDocumentsScreen = () => {
           ) : (
             <FlatList
               data={filteredData}
-              renderItem={renderTableRow}
+              renderItem={({ item, index }) => (
+                <DocumentTableRow 
+                  item={item} 
+                  index={index} 
+                  onViewDocument={handleViewDocument} 
+                />
+              )}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
             />
@@ -502,155 +263,18 @@ const ManageDocumentsScreen = () => {
         </View>
       </View>
 
-      {/* Simplified Document Modal */}
-      <DocumentModal />
+      {/* Document Modal */}
+      <DocumentModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        selectedRegistrant={selectedRegistrant}
+        selectedDocuments={selectedDocuments}
+        requiredDocuments={requiredDocuments}
+        documentDisplayNames={documentDisplayNames}
+        formatUploadDate={formatUploadDate}
+      />
     </View>
   );
-};
-
-// Simplified Modal Styles
-const simplifiedModalStyles = {
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    margin: 20,
-    maxHeight: '85%',
-    width: '90%',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#002366',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  backButton: {
-    marginRight: 12,
-    padding: 4,
-  },
-  backButtonText: {
-    fontSize: 20,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-    flex: 1,
-  },
-  closeButton: {
-    padding: 8,
-    borderRadius: 50,
-    backgroundColor: '#dc3545',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  registrantInfo: {
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
-  },
-  documentsContainer: {
-    flex: 1,
-  },
-  documentsGrid: {
-    padding: 16,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  documentCard: {
-    width: '47%',
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  documentCardTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  statusIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    top: 8,
-    right: 8,
-  },
-  statusIndicatorText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  documentViewContainer: {
-    flex: 1,
-  },
-  documentContent: {
-    flex: 1,
-  },
-  documentImageContainer: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  documentImage: {
-    width: '100%',
-    height: 400,
-    borderRadius: 8,
-  },
-  uploadDateContainer: {
-    padding: 16,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: 'white',
-  },
-  uploadDateText: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
-  },
 };
 
 export default ManageDocumentsScreen;
