@@ -28,7 +28,7 @@ export default function StallScreen() {
         .from("Application")
         .select("*")
         .eq("stallNo", stallId)
-        .eq("status", "pending");
+        .eq("status", "applied");
 
       if (error) {
         console.log("❌ Error fetching participants:", error);
