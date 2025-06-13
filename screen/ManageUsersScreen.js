@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Alert } from 'react-native';
 import AdminNavbar from '../components/AdminNavbar';
 import supabase from '../config/supabaseClient';
-import emailjs from '@emailjs/browser';
 import styles from '../Styles/ManageStall';
 
 import UserHeader from '../components/ManagaUser/UserHeader';
@@ -10,11 +9,7 @@ import SearchAndFilter from '../components/ManagaUser/SearchAndFilter';
 import UserTable from '../components/ManagaUser/UserTable';
 import ImageModal from '../components/ManagaUser/ImageModal';
 import { generateUsername, generatePassword, sortRegistrantData } from '../utils/userUtils';
-import { sendAutomatedEmail } from '../services/emailService';
-
-// Initialize EmailJS
-const EMAILJS_USER_ID = 'sTpDE-Oq2-9XH_UZd';
-emailjs.init(EMAILJS_USER_ID);
+import { sendCredentialsEmailWithRetry, sendStatusNotificationEmail } from '../services/emailServiceAccout';
 
 export default function ManageUsersScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,25 +69,32 @@ export default function ManageUsersScreen() {
     }
   };
 
-  // Show credentials modal after approval
-  const showCredentialsModal = (username, password, emailAddress) => {
-    Alert.alert(
-      'User Approved',
-      `User has been approved with the following credentials:\n\nUsername: ${username}\nPassword: ${password}\n\nSending email automatically...`,
-      [{ text: 'OK' }]
-    );
-    
-    sendAutomatedEmail(emailAddress, username, password, setEmailSending);
-  };
-
-  // Handle accept user
-  const handleAccept = async (userId, userEmail) => {
+  // Handle accept user - FIXED VERSION
+  const handleAccept = async (userId) => {
     try {
+      setEmailSending(true);
+      
+      // Find the user data from the registrant array
+      const userData = registrant.find(user => user.registrationId === userId);
+      if (!userData) {
+        Alert.alert('Error', 'User data not found');
+        return;
+      }
+      
+      const userEmail = userData.emailAddress; // Use emailAddress from database
+      const userName = userData.fullName; // Use fullName for display
+      
       const username = generateUsername();
       const password = generatePassword();
       
-      console.log(`Updating user ${userId} with username: ${username}, password: ${password}`);
+      console.log(`📝 Approving user ${userId}:`, {
+        email: userEmail,
+        name: userName,
+        username,
+        password
+      });
       
+      // Update user status in database
       const { data, error } = await supabase
         .from('Registrant')
         .update({ 
@@ -103,13 +105,23 @@ export default function ManageUsersScreen() {
         .eq('registrationId', userId);
 
       if (error) {
-        console.log('❌ Error approving user:', error);
+        console.log('❌ Error updating database:', error);
         Alert.alert('Error', `Failed to approve user: ${error.message}`);
         return;
       }
       
-      console.log('✅ User approved successfully:', data);
+      console.log('✅ Database updated successfully');
       
+      // Send email with credentials using the retry mechanism
+      const emailResult = await sendCredentialsEmailWithRetry(userEmail, username, password);
+      
+      if (emailResult.success) {
+        Alert.alert('Success', `User ${userName} approved and credentials sent to ${userEmail}`);
+      } else {
+        Alert.alert('Partial Success', `User approved but email failed: ${emailResult.message}\n\nCredentials:\nUsername: ${username}\nPassword: ${password}`);
+      }
+      
+      // Update local state
       const updatedRegistrants = registrant.map(item => 
         item.registrationId === userId 
           ? {...item, status: 'approved', userName: [username], password: [password]} 
@@ -118,23 +130,50 @@ export default function ManageUsersScreen() {
       
       const sortedData = sortRegistrantData(updatedRegistrants);
       setRegistrant(sortedData);
-      showCredentialsModal(username, password, userEmail);
+      applyFiltersAndSearch(sortedData, statusFilter, searchQuery);
       
     } catch (error) {
-      console.log('❌ Unexpected error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.log('❌ Unexpected error in handleAccept:', error);
+      Alert.alert('Error', 'An unexpected error occurred while approving user');
+    } finally {
+      setEmailSending(false);
     }
   };
 
-  // Handle resend credentials
-  const handleResendCredentials = async (userId, emailAddress, username, password) => {
+  // Handle resend credentials - FIXED VERSION
+  const handleResendCredentials = async (userId) => {
     try {
       setEmailSending(true);
-      const success = await sendAutomatedEmail(emailAddress, username, password, setEmailSending);
       
-      if (success) {
-        Alert.alert('Success', `Credentials resent to ${emailAddress}`);
+      // Find the user data from the registrant array
+      const userData = registrant.find(user => user.registrationId === userId);
+      if (!userData) {
+        Alert.alert('Error', 'User data not found');
+        return;
       }
+      
+      const userEmail = userData.emailAddress; // Use emailAddress from database
+      const username = userData.userName;
+      const password = userData.password;
+      
+      // Clean up the username and password if they're in array format
+      const cleanUsername = Array.isArray(username) ? username[0] : username?.replace(/[{}]/g, '');
+      const cleanPassword = Array.isArray(password) ? password[0] : password?.replace(/[{}]/g, '');
+      
+      console.log('📧 Resending credentials:', { 
+        email: userEmail, 
+        username: cleanUsername, 
+        password: cleanPassword 
+      });
+      
+      const result = await sendCredentialsEmailWithRetry(userEmail, cleanUsername, cleanPassword);
+      
+      if (result.success) {
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Error', result.message);
+      }
+      
     } catch (error) {
       console.log('❌ Error resending credentials:', error);
       Alert.alert('Error', 'Failed to resend credentials');
@@ -143,9 +182,21 @@ export default function ManageUsersScreen() {
     }
   };
 
-  // Handle decline user
+  // Handle decline user - FIXED VERSION
   const handleDecline = async (userId) => {
     try {
+      setEmailSending(true);
+      
+      // Find the user data from the registrant array
+      const userData = registrant.find(user => user.registrationId === userId);
+      if (!userData) {
+        Alert.alert('Error', 'User data not found');
+        return;
+      }
+      
+      const userEmail = userData.emailAddress; // Use emailAddress from database
+      const userName = userData.fullName; // Use fullName for display
+      
       const { error } = await supabase
         .from('Registrant')
         .update({ status: 'declined' })
@@ -154,18 +205,32 @@ export default function ManageUsersScreen() {
       if (error) {
         console.log('❌ Error declining user:', error);
         Alert.alert('Error', `Failed to decline user: ${error.message}`);
-      } else {
-        const updatedRegistrants = registrant.map(item => 
-          item.registrationId === userId ? {...item, status: 'declined'} : item
-        );
-        
-        const sortedData = sortRegistrantData(updatedRegistrants);
-        setRegistrant(sortedData);
-        Alert.alert('Success', 'User has been declined');
+        return;
       }
+      
+      // Send status notification email
+      const emailResult = await sendStatusNotificationEmail(userEmail, userName, 'declined');
+      
+      if (emailResult.success) {
+        Alert.alert('Success', `User ${userName} declined and notification sent to ${userEmail}`);
+      } else {
+        Alert.alert('Partial Success', `User declined but email notification failed: ${emailResult.message}`);
+      }
+      
+      // Update local state
+      const updatedRegistrants = registrant.map(item => 
+        item.registrationId === userId ? {...item, status: 'declined'} : item
+      );
+      
+      const sortedData = sortRegistrantData(updatedRegistrants);
+      setRegistrant(sortedData);
+      applyFiltersAndSearch(sortedData, statusFilter, searchQuery);
+      
     } catch (error) {
       console.log('❌ Unexpected error:', error);
       Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setEmailSending(false);
     }
   };
 

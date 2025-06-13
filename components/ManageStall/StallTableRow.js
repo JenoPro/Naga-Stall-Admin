@@ -11,6 +11,7 @@ import CountdownSection from "./TableComponents/CountdownSection";
 import ParticipantsButton from "./TableComponents/ParticipantsButton";
 import ActionButtons from "./TableComponents/ActionButtons";
 import StallModals from "./StallModal/StallModals";
+import LiveRaffle from "../../screen/LiveRaffle"; // Import your LiveRaffle component
 import useStallTimer from "./StallModal/useStallTimer";
 import useStallParticipants from "./StallModal/useStallParticipants";
 
@@ -31,6 +32,7 @@ export default function StallTableRow({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRaffleTimeModal, setShowRaffleTimeModal] = useState(false);
+  const [showLiveRaffle, setShowLiveRaffle] = useState(false); // Add Live Raffle state
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Custom hooks
@@ -69,6 +71,20 @@ export default function StallTableRow({
     if (onRemoveStall && typeof onRemoveStall === "function") {
       onRemoveStall(item.stallId);
     }
+  };
+
+  // Handle Go Live button click
+  const handleGoLive = () => {
+    setShowLiveRaffle(true);
+    // Call the original onGoLive if it exists
+    if (onGoLive && typeof onGoLive === "function") {
+      onGoLive(item.stallId);
+    }
+  };
+
+  // Handle closing Live Raffle
+  const handleCloseLiveRaffle = () => {
+    setShowLiveRaffle(false);
   };
 
   const handleConfirmDelete = async () => {
@@ -135,7 +151,7 @@ export default function StallTableRow({
           status={item.status}
           onEdit={handleEditStall}
           onRemove={handleRemoveStall}
-          onGoLive={() => onGoLive && onGoLive(item.stallId)}
+          onGoLive={handleGoLive} // Use our custom handler
         />
       </View>
 
@@ -163,6 +179,22 @@ export default function StallTableRow({
         showRaffleTimeModal={showRaffleTimeModal}
         onCloseRaffleTimeModal={() => setShowRaffleTimeModal(false)}
         onConfirmRaffleTime={handleStartTimerWithTime}
+      />
+
+      {/* Live Raffle Modal */}
+      <LiveRaffle
+        visible={showLiveRaffle}
+        onClose={handleCloseLiveRaffle}
+        stallData={item} // Pass the entire stall data
+        stallNo={item.stallNo}
+        stallLocation={item.stallLocation}
+        stallSize={item.size}
+        rentalPrice={item.rentalPrice}
+        stallImage={item.stallImage}
+        getImageUrl={getImageUrl}
+        participants={participants}
+        timerRunning={timerRunning}
+        timerPaused={timerPaused}
       />
     </>
   );

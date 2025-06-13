@@ -13,17 +13,33 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera for live streaming raffle events to participants."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Naga-Stall-Admin to access your camera for live streaming raffle events.",
+          "microphonePermission": "Allow Naga-Stall-Admin to access your microphone for live streaming audio."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "e33b3ed4-5fb8-40d8-a545-dd9d4069f164"

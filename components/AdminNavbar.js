@@ -46,7 +46,7 @@ const AdminNavbar = ({ activeId }) => {
         <Image source={require('../assets/Profile.png')} style={styles.profileIcon} />
         {isHovered && (
           <View>
-            <Text style={styles.profileName}>John Doe</Text>
+            <Text style={styles.profileName}>Admin</Text>
             <Text style={styles.profileSub}>View Profile</Text>
           </View>
         )}

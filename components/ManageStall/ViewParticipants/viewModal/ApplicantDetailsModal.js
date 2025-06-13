@@ -18,7 +18,6 @@ export default function ApplicantDetailsModal({ visible, applicant, onClose }) {
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
       onRequestClose={onClose}
     >
       <View style={styles.detailsModalOverlay}>
