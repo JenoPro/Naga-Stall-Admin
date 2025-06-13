@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import styles from '../../Styles/ManageStall';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import styles from "../../Styles/ManageStall";
 
 const UserHeader = ({ onRefresh }) => {
   return (

@@ -11,19 +11,17 @@ import {
 } from "./ViewParticipants/AddComponents/StallService";
 
 export default function AddStallModal({ visible, onClose, onStallAdded }) {
-  // Remove raffleDate and raffleTime from newStall state
   const [newStall, setNewStall] = useState({
     stallNo: "",
     stallLocation: "",
     size: "",
     rentalPrice: "",
     stallImage: null,
-    status: "available", // Changed from "active" to "available"
+    status: "available",
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset form when modal opens
   React.useEffect(() => {
     if (visible) {
       setNewStall({
@@ -32,14 +30,13 @@ export default function AddStallModal({ visible, onClose, onStallAdded }) {
         size: "",
         rentalPrice: "",
         raffleDate: new Date(),
-        raffleTime: { hours: 5, minutes: 0, period: "PM" }, // Include default time
+        raffleTime: { hours: 5, minutes: 0, period: "PM" },
         stallImage: null,
         status: "available",
       });
     }
   }, [visible]);
 
-  // Handle image selection for new stall
   const handlePickStallImage = async () => {
     const imageUri = await pickStallImage();
     if (imageUri) {
@@ -50,21 +47,17 @@ export default function AddStallModal({ visible, onClose, onStallAdded }) {
     }
   };
 
-  // Handle date selection from calendar
   const handleDateSelect = (selectedDate) => {
     setNewStall({ ...newStall, raffleDate: selectedDate });
   };
 
-  // Handle submit new stall
   const handleSubmitStall = async () => {
-    // Log the data being submitted for debugging
     console.log("Submitting stall data:", {
       ...newStall,
       raffleDate: newStall.raffleDate.toISOString(),
       raffleTime: newStall.raffleTime,
     });
 
-    // Validate form
     if (!validateStallData(newStall)) {
       return;
     }
@@ -72,19 +65,16 @@ export default function AddStallModal({ visible, onClose, onStallAdded }) {
     setIsSubmitting(true);
 
     try {
-      // Upload image if selected
       const imagePath = await uploadStallImage(
         newStall.stallImage,
         newStall.stallNo
       );
 
       if (newStall.stallImage && !imagePath) {
-        // Image upload failed
         setIsSubmitting(false);
         return;
       }
 
-      // Insert stall record
       const data = await insertStallData(newStall, imagePath);
 
       if (data) {

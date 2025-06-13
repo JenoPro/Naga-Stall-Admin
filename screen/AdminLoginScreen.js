@@ -15,7 +15,7 @@ export default function AdminLoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [showPopup, setShowPopup] = useState(false); // for the modal
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleLogin = () => {
     const fixedUsername = 'admin';

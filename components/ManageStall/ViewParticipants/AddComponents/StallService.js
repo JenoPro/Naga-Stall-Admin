@@ -26,7 +26,6 @@ export const validateStallData = (stallData) => {
   return true;
 };
 
-// Upload stall image function
 export const uploadStallImage = async (imageUri, stallNo) => {
   if (!imageUri) return null;
 
@@ -69,7 +68,6 @@ export const uploadStallImage = async (imageUri, stallNo) => {
   }
 };
 
-// Insert new stall data
 export const insertStallData = async (stallData, imagePath) => {
   try {
     console.log("Inserting stall data:", {
@@ -89,7 +87,7 @@ export const insertStallData = async (stallData, imagePath) => {
           rentalPrice: parseFloat(stallData.rentalPrice),
           stallImage: imagePath,
           status: stallData.status,
-          time_running: false, // Initially not running
+          time_running: false,
         },
       ])
       .select();
@@ -112,43 +110,37 @@ export const insertStallData = async (stallData, imagePath) => {
 
 export const calculateRaffleDateTime = (date, time) => {
   if (!date || !time) {
-    console.warn('⚠️ Missing date or time for raffle calculation');
+    console.warn("⚠️ Missing date or time for raffle calculation");
     return null;
   }
 
   try {
-    // Create a new date object from the provided date
     const raffleDateTime = new Date(date);
-    
-    // Parse the time
+
     let hours = parseInt(time.hours);
     const minutes = parseInt(time.minutes);
-    
-    // Convert to 24-hour format if needed
-    if (time.period === 'PM' && hours !== 12) {
+
+    if (time.period === "PM" && hours !== 12) {
       hours += 12;
-    } else if (time.period === 'AM' && hours === 12) {
+    } else if (time.period === "AM" && hours === 12) {
       hours = 0;
     }
-    
-    // Set the time
+
     raffleDateTime.setHours(hours, minutes, 0, 0);
-    
-    console.log('🕒 Calculated raffle date/time:', raffleDateTime);
+
+    console.log("🕒 Calculated raffle date/time:", raffleDateTime);
     return raffleDateTime;
   } catch (error) {
-    console.error('❌ Error calculating raffle date/time:', error);
+    console.error("❌ Error calculating raffle date/time:", error);
     return null;
   }
 };
 
-// Update stall data
 export const updateStallData = async (stallId, stallData, imagePath) => {
   try {
     console.log("🔄 Updating stall with ID:", stallId);
     console.log("🔄 Update data:", stallData);
 
-    // Prepare update object - remove updated_at as it should be handled by database trigger
     const updateData = {
       stallNo: stallData.stallNo,
       stallLocation: stallData.stallLocation,
@@ -173,7 +165,6 @@ export const updateStallData = async (stallId, stallData, imagePath) => {
     console.log("✅ Stall updated successfully:", data);
     Alert.alert("Success", "Stall updated successfully!");
 
-    // Return updated data
     return data[0];
   } catch (error) {
     console.error("❌ Unexpected error updating stall:", error);
@@ -182,42 +173,34 @@ export const updateStallData = async (stallId, stallData, imagePath) => {
   }
 };
 
-// Delete stall data
 export const deleteStallData = async (stallId) => {
   try {
     console.log("🗑️ Deleting stall with ID:", stallId);
 
-    // First, try to delete from Application table (based on your error logs)
-    // Use stallId as foreign key instead of stall_id
     const { error: applicationError } = await supabase
       .from("Application")
       .delete()
-      .eq("stallId", stallId); // Changed from stall_id to stallId
+      .eq("stallId", stallId);
 
-    // Log the error but don't fail if this table doesn't exist or has no records
     if (applicationError) {
       console.log(
         "⚠️ Note: Could not delete from Application table:",
         applicationError
       );
-      // Don't return false here - continue with stall deletion
     }
 
-    // Also try participants table in case it exists with different naming
     const { error: participantsError } = await supabase
       .from("participants")
       .delete()
-      .eq("stallId", stallId); // Try stallId instead of stall_id
+      .eq("stallId", stallId);
 
     if (participantsError) {
       console.log(
         "⚠️ Note: Could not delete from participants table:",
         participantsError
       );
-      // Don't return false here - continue with stall deletion
     }
 
-    // Then, delete the stall itself
     const { data, error: stallError } = await supabase
       .from("Stall")
       .delete()
@@ -240,7 +223,6 @@ export const deleteStallData = async (stallId) => {
   }
 };
 
-// Start timer for a stall (basic version)
 export const startStallTimer = async (stallId) => {
   try {
     const { data, error } = await supabase
@@ -264,21 +246,17 @@ export const startStallTimer = async (stallId) => {
   }
 };
 
-// Fixed function to properly save raffle date and time
 export const setRaffleTimeAndStart = async (
   stallId,
   raffleDateTime,
   raffleTime
 ) => {
   try {
-    // Handle both date object and separate date/time parameters
     let endDateTime;
 
     if (raffleDateTime instanceof Date) {
-      // If raffleDateTime is already a Date object, use it directly
       endDateTime = raffleDateTime;
     } else {
-      // If separate date and time parameters are provided
       endDateTime = new Date(raffleDateTime);
       if (raffleTime) {
         endDateTime.setHours(
@@ -304,14 +282,12 @@ export const setRaffleTimeAndStart = async (
       timeDifference: endTimeTimestamp - Date.now(),
     });
 
-    // Prepare update object
     const updateData = {
       time_running: true,
       status: "Countdown",
-      end_time: endTimeTimestamp, // Store as milliseconds timestamp
+      end_time: endTimeTimestamp,
     };
 
-    // Only add raffleDate if the column exists in your database
     try {
       updateData.raffleDate = endDateTime.toISOString().split("T")[0];
     } catch (e) {
@@ -327,12 +303,11 @@ export const setRaffleTimeAndStart = async (
     if (error) {
       console.log("❌ Error starting timer with raffle time:", error);
 
-      // Try alternative approach with seconds instead of milliseconds
       console.log("Trying alternative timestamp format...");
       const alternativeUpdateData = {
         time_running: true,
         status: "Countdown",
-        end_time: Math.floor(endTimeTimestamp / 1000), // Convert to seconds
+        end_time: Math.floor(endTimeTimestamp / 1000),
       };
 
       const { data: altData, error: altError } = await supabase
@@ -361,7 +336,6 @@ export const setRaffleTimeAndStart = async (
   }
 };
 
-// Update timer completion to change status to "Raffle"
 export const completeRaffleTimer = async (stallId) => {
   try {
     const { data, error } = await supabase
@@ -369,7 +343,7 @@ export const completeRaffleTimer = async (stallId) => {
       .update({
         time_running: false,
         status: "Raffle",
-        end_time: null, // Clear the end time
+        end_time: null,
       })
       .eq("stallId", stallId)
       .select();
@@ -387,7 +361,6 @@ export const completeRaffleTimer = async (stallId) => {
   }
 };
 
-// Clear/reset timer
 export const clearStallTimer = async (stallId) => {
   try {
     const { data, error } = await supabase
@@ -395,8 +368,8 @@ export const clearStallTimer = async (stallId) => {
       .update({
         time_running: false,
         status: "available",
-        end_time: null, // Clear the end time
-        raffleDate: null, // Clear the raffle date
+        end_time: null,
+        raffleDate: null,
       })
       .eq("stallId", stallId)
       .select();
@@ -416,15 +389,14 @@ export const clearStallTimer = async (stallId) => {
   }
 };
 
-// Stop the timer for a stall
 export const stopStallTimer = async (stallId) => {
   try {
     const { data, error } = await supabase
       .from("Stall")
       .update({
         time_running: false,
-        status: "available", // Change status back to available
-        end_time: null, // Clear the end time
+        status: "available",
+        end_time: null,
       })
       .eq("stallId", stallId)
       .select();

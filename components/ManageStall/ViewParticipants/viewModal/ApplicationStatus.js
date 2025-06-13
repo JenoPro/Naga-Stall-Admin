@@ -30,14 +30,12 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
     setIsUpdating(true);
 
     try {
-      // Enhanced debugging - log the complete applicant object structure
       console.log(
         "🔍 Complete applicant object:",
         JSON.stringify(applicant, null, 2)
       );
       console.log("🔍 Available properties:", Object.keys(applicant));
 
-      // Get the ApplicationId from the applicant object
       const applicationId = applicant.ApplicationId;
 
       if (!applicationId) {
@@ -48,7 +46,6 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
 
       console.log("Updating application with ApplicationId:", applicationId);
 
-      // First, update the application status in the Application table
       const { error: updateError } = await supabase
         .from("Application")
         .update({ status: newStatus })
@@ -64,7 +61,6 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
 
       console.log("✅ Status updated successfully");
 
-      // Now fetch the application data first to get the registrationId
       const { data: applicationData, error: fetchAppError } = await supabase
         .from("Application")
         .select("Applicants_Name, registrationId")
@@ -92,7 +88,6 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
         return;
       }
 
-      // Now fetch the registrant data using the registrationId
       const { data: registrantData, error: fetchRegError } = await supabase
         .from("Registrant")
         .select("emailAddress")
@@ -114,7 +109,6 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
       console.log("👤 Found name:", userName);
       console.log("📧 Found email:", userEmail);
 
-      // If email is found, send notification
       if (userEmail) {
         try {
           console.log(`📧 Sending ${newStatus} notification to:`, userEmail);
@@ -147,7 +141,6 @@ export default function ApplicationStatus({ applicant, onStatusUpdate }) {
         );
       }
 
-      // Update the parent component with new status
       if (onStatusUpdate) {
         onStatusUpdate(applicationId, newStatus);
       }

@@ -6,11 +6,14 @@ import {
   completeRaffleTimer,
 } from "../ViewParticipants/AddComponents/StallService";
 
-export default function useStallTimer(item, onStallUpdated, setShowRaffleTimeModal) {
+export default function useStallTimer(
+  item,
+  onStallUpdated,
+  setShowRaffleTimeModal
+) {
   const [timerRunning, setTimerRunning] = useState(item.time_running || false);
   const [timerPaused, setTimerPaused] = useState(false);
 
-  // Sync timer state with item changes
   useEffect(() => {
     setTimerRunning(item.time_running || false);
     if (!item.time_running) {
@@ -66,7 +69,10 @@ export default function useStallTimer(item, onStallUpdated, setShowRaffleTimeMod
               }
             } catch (error) {
               console.error("Error resetting timer:", error);
-              Alert.alert("Error", "An error occurred while resetting the timer");
+              Alert.alert(
+                "Error",
+                "An error occurred while resetting the timer"
+              );
             }
           },
         },

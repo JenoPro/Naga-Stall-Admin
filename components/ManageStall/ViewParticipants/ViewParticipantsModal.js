@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import supabase from "../../../config/supabaseClient";
 import styles from "../../../Styles/ViewParticipantsModal";
 import ApplicantItem from "./viewModal/ApplicantItem";
@@ -27,30 +27,29 @@ export default function ViewParticipantsModal({
   const [showDetails, setShowDetails] = useState(false);
   const [viewedParticipants, setViewedParticipants] = useState([]);
 
-  // Load previously viewed participants from AsyncStorage
   const loadViewedParticipants = async () => {
     try {
       const key = `stall_${stallId}_viewed_participants`;
       const viewedParticipantsStr = await AsyncStorage.getItem(key);
-      const viewed = viewedParticipantsStr ? JSON.parse(viewedParticipantsStr) : [];
+      const viewed = viewedParticipantsStr
+        ? JSON.parse(viewedParticipantsStr)
+        : [];
       setViewedParticipants(viewed);
     } catch (error) {
-      console.error('Error loading viewed participants:', error);
+      console.error("Error loading viewed participants:", error);
       setViewedParticipants([]);
     }
   };
 
-  // Save viewed participants to AsyncStorage
   const saveViewedParticipants = async (updatedViewedList) => {
     try {
       const key = `stall_${stallId}_viewed_participants`;
       await AsyncStorage.setItem(key, JSON.stringify(updatedViewedList));
     } catch (error) {
-      console.error('Error saving viewed participants:', error);
+      console.error("Error saving viewed participants:", error);
     }
   };
 
-  // Mark participant as viewed
   const markParticipantAsViewed = async (applicationId) => {
     if (!viewedParticipants.includes(applicationId)) {
       const updatedViewedList = [...viewedParticipants, applicationId];
@@ -69,13 +68,15 @@ export default function ViewParticipantsModal({
   const fetchApplicants = async () => {
     try {
       setLoading(true);
-      
+
       const { data: applications, error } = await supabase
         .from("Application")
-        .select(`
+        .select(
+          `
           *,
           SpouseInformation (*)
-        `)
+        `
+        )
         .eq("stallNo", stallId);
 
       if (error) {
@@ -104,12 +105,10 @@ export default function ViewParticipantsModal({
     setSelectedApplicant(null);
   };
 
-  // Check if a participant is new (not previously viewed)
   const isNewParticipant = (applicant) => {
     return !viewedParticipants.includes(applicant.ApplicationId);
   };
 
-  // Check if participant was added after last viewed timestamp
   const isRecentParticipant = (applicant) => {
     if (!lastViewedTimestamp || !applicant.created_at) return false;
     const createdAt = new Date(applicant.created_at);
@@ -166,7 +165,10 @@ export default function ViewParticipantsModal({
             )}
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.refreshButton} onPress={fetchApplicants}>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={fetchApplicants}
+              >
                 <Text style={styles.refreshButtonText}>Refresh</Text>
               </TouchableOpacity>
             </View>

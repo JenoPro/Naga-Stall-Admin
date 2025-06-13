@@ -1,18 +1,12 @@
 import React from "react";
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-} from "react-native";
+import { Text, View, TouchableOpacity, Modal, StyleSheet } from "react-native";
 
-export default function DeleteConfirmationModal({ 
-  visible, 
-  onClose, 
-  onConfirm, 
-  stallNo, 
-  isDeleting = false 
+export default function DeleteConfirmationModal({
+  visible,
+  onClose,
+  onConfirm,
+  stallNo,
+  isDeleting = false,
 }) {
   return (
     <Modal
@@ -28,13 +22,14 @@ export default function DeleteConfirmationModal({
           </View>
 
           <Text style={deleteStyles.title}>Delete Stall</Text>
-          
+
           <Text style={deleteStyles.message}>
             Are you sure you want to delete Stall #{stallNo}?
           </Text>
-          
+
           <Text style={deleteStyles.subMessage}>
-            This action cannot be undone. All participant data for this stall will also be removed.
+            This action cannot be undone. All participant data for this stall
+            will also be removed.
           </Text>
 
           <View style={deleteStyles.buttonContainer}>
@@ -48,9 +43,9 @@ export default function DeleteConfirmationModal({
 
             <TouchableOpacity
               style={[
-                deleteStyles.button, 
+                deleteStyles.button,
                 deleteStyles.deleteButton,
-                isDeleting && deleteStyles.disabledButton
+                isDeleting && deleteStyles.disabledButton,
               ]}
               onPress={onConfirm}
               disabled={isDeleting}
@@ -69,19 +64,19 @@ export default function DeleteConfirmationModal({
 const deleteStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   container: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -98,29 +93,29 @@ const deleteStyles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   message: {
     fontSize: 16,
-    color: '#555',
+    color: "#555",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   subMessage: {
     fontSize: 14,
-    color: '#777',
+    color: "#777",
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     gap: 12,
   },
   button: {
@@ -128,29 +123,29 @@ const deleteStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 44,
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   deleteButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: "#dc3545",
   },
   disabledButton: {
     opacity: 0.6,
   },
   cancelButtonText: {
-    color: '#333',
+    color: "#333",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   deleteButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

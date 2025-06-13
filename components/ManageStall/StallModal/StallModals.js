@@ -5,26 +5,22 @@ import DeleteConfirmationModal from "../EditDelete/DeleteConfirmationModal";
 import RaffleTimeModal from "../ViewParticipants/TimerComponents/RaffleTimeModal";
 
 export default function StallModals({
-  // Participants Modal props
   showParticipantsModal,
   onCloseParticipantsModal,
   stallId,
   stallNo,
   participants,
-  
-  // Edit Modal props
+
   showEditModal,
   onCloseEditModal,
   onStallUpdated,
   stallData,
-  
-  // Delete Modal props
+
   showDeleteModal,
   onCloseDeleteModal,
   onConfirmDelete,
   isDeleting,
-  
-  // Raffle Time Modal props
+
   showRaffleTimeModal,
   onCloseRaffleTimeModal,
   onConfirmRaffleTime,

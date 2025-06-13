@@ -11,7 +11,6 @@ export default function useStallParticipants(
   const [lastViewedCount, setLastViewedCount] = useState(0);
   const [newParticipantsCount, setNewParticipantsCount] = useState(0);
 
-  // AsyncStorage helpers
   const getViewedCountKey = (stallId) => `stall_${stallId}_viewed_count`;
 
   const loadViewedCount = async (stallId) => {
@@ -34,7 +33,6 @@ export default function useStallParticipants(
     }
   };
 
-  // Load participants data
   useEffect(() => {
     const loadParticipants = async () => {
       try {

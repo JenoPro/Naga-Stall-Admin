@@ -5,9 +5,16 @@ import EditStallHeader from "./EditModal/EditStallHeader";
 import EditStallForm from "./EditModal/EditStallForm";
 import EditStallSubmitButton from "./EditModal/EditStallSubmitButton";
 import EditStallCalendar from "./EditModal/EditStallCalendar";
-import { validateStallData, uploadStallImage, updateStallData } from "../ViewParticipants/AddComponents/StallService";
+import {
+  validateStallData,
+  uploadStallImage,
+  updateStallData,
+} from "../ViewParticipants/AddComponents/StallService";
 import { pickStallImage } from "../ViewParticipants/AddComponents/ImagePickerService";
-import { parseStallData, calculateRaffleDateTime } from "./EditModal/EditStallUtils";
+import {
+  parseStallData,
+  calculateRaffleDateTime,
+} from "./EditModal/EditStallUtils";
 
 export default function EditStallModal({
   visible,
@@ -28,7 +35,6 @@ export default function EditStallModal({
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Populate form with existing stall data when modal opens
   useEffect(() => {
     if (visible && stallData) {
       const parsedStallData = parseStallData(stallData);
@@ -36,7 +42,6 @@ export default function EditStallModal({
     }
   }, [visible, stallData]);
 
-  // Handle image selection for edit stall
   const handlePickStallImage = async () => {
     const imageUri = await pickStallImage();
     if (imageUri) {
@@ -44,20 +49,16 @@ export default function EditStallModal({
     }
   };
 
-  // Handle date selection from calendar
   const handleDateSelect = (selectedDate) => {
     setEditStall({ ...editStall, raffleDate: selectedDate });
     setShowCalendar(false);
   };
 
-  // Handle time selection
   const handleTimeSelect = (timeObj) => {
     setEditStall({ ...editStall, raffleTime: timeObj });
   };
 
-  // Handle submit edited stall with proper callback
   const handleSubmitStall = async () => {
-    // Validate form
     if (!validateStallData(editStall)) {
       return;
     }
@@ -65,9 +66,8 @@ export default function EditStallModal({
     setIsSubmitting(true);
 
     try {
-      let imagePath = stallData.stallImage; // Keep existing image by default
+      let imagePath = stallData.stallImage;
 
-      // Upload new image if selected
       if (editStall.stallImage !== stallData.stallImage) {
         const uploadedImagePath = await uploadStallImage(
           editStall.stallImage,
@@ -80,7 +80,6 @@ export default function EditStallModal({
         imagePath = uploadedImagePath;
       }
 
-      // Prepare stall data with raffleTime included
       const stallDataToUpdate = {
         stallNo: editStall.stallNo,
         stallLocation: editStall.stallLocation,
@@ -99,13 +98,11 @@ export default function EditStallModal({
       );
 
       if (updatedData) {
-        // Calculate the combined date/time for end_time
         const combinedDateTime = calculateRaffleDateTime(
           editStall.raffleDate,
           editStall.raffleTime
         );
 
-        // Create complete updated stall object with all necessary fields
         const completeUpdatedStall = {
           ...stallData,
           ...updatedData,
@@ -113,7 +110,6 @@ export default function EditStallModal({
           end_time: combinedDateTime,
         };
 
-        // Call the callback with the complete updated data
         if (onStallUpdated && typeof onStallUpdated === "function") {
           onStallUpdated(completeUpdatedStall);
         }

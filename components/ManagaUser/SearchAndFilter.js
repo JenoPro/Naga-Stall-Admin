@@ -10,7 +10,6 @@ const SearchAndFilter = ({
   onFilterChange 
 }) => {
   const handleSearch = () => {
-    // Optional: Add any additional search logic here
     console.log('Search triggered for:', searchQuery);
   };
 
